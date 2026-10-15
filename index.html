@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Tempo OMNI - CRUD</title>
+    <!-- Adicionando o Manifesto para PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#161031">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #161031, #701A75);
+            color: #FFFFFF;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        /* HEADER & AÇÕES */
+        .header-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 40px;
+            width: 100%;
+        }
+        .painel-titulo {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .btn-acao {
+            background: #D1107A;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(209, 16, 122, 0.4);
+            transition: all 0.3s ease;
+        }
+        .btn-acao:hover {
+            background: #F472B6;
+            transform: translateY(-2px);
+        }
+
+        /* GRID DE CARTÕES */
+        .grid-contadores {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            max-width: 1400px;
+            width: 100%;
+        }
+        .container-contador {
+            background: #161031;
+            border: 1px solid rgba(244, 114, 182, 0.2);
+            border-radius: 28px;
+            padding: 40px 25px 25px;
+            text-align: center;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            flex: 1;
+            min-width: 320px;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        /* AÇÕES DO CARTÃO (EDITAR/EXCLUIR) */
+        .card-actions {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: #F3F4F6;
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .btn-icon:hover { opacity: 1; color: #F472B6; }
+
+        /* TEXTOS DO CARTÃO */
+        h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #F3F4F6;
+            letter-spacing: 1.2px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
+        }
+        .objetivo-destaque {
+            color: #F472B6;
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        .espacador-vazio {
+            height: 28px;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        /* CRONÔMETRO GRID */
+        .countdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .time-box {
+            background: rgba(112, 26, 117, 0.15);
+            padding: 12px 4px;
+            border-radius: 12px;
+            border: 1px solid rgba(244, 114, 182, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .time-box .number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #D1107A;
+            display: block;
+            line-height: 1;
+            margin-bottom: 6px;
+            text-shadow: 0 0 15px rgba(209, 16, 122, 0.2);
+        }
+        .time-box .label {
+            font-size: 0.6rem;
+            color: #F3F4F6;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(244, 114, 182, 0.3), transparent);
+            margin: 20px 0;
+            border: none;
+        }
+        .target-date {
+            font-size: 0.85rem;
+            color: #F3F4F6;
+            opacity: 0.9;
+        }
+        .target-date strong {
+            color: #FFFFFF;
+            font-weight: 600;
+            border-bottom: 2px solid #D1107A;
+            padding-bottom: 2px;
+        }
+
+        /* MODAL CRUD */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #161031;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #701A75;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #F472B6;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+            color: #F3F4F6;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(244, 114, 182, 0.3);
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-family: inherit;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #D1107A;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        .btn-cancelar {
+            background: transparent;
+            color: #F3F4F6;
+            border: 1px solid #F3F4F6;
+            padding: 10px;
+            border-radius: 8px;
+            flex: 1;
+            cursor: pointer;
+        }
+        .btn-salvar {
+            background: #D1107A;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            flex: 1;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1 class="painel-titulo">Painel de Tempo Omni</h1>
+        <button class="btn-acao" onclick="abrirModal()">+ Adicionar Nova Meta</button>
+    </div>
+
+    <!-- O Container onde os cartões serão gerados dinamicamente via JS -->
+    <div class="grid-contadores" id="grid-contadores"></div>
+
+    <!-- Modal Formulário CRUD -->
+    <div class="modal-overlay" id="crudModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Nova Meta</h3>
+            <form id="metaForm" onsubmit="salvarMeta(event)">
+                <input type="hidden" id="metaId">
+                <div class="form-group">
+                    <label>Título da Meta (ex: Liberdade Financeira)</label>
+                    <input type="text" id="metaTitulo" required>
+                </div>
+                <div class="form-group">
+                    <label>Data e Hora Alvo</label>
+                    <input type="datetime-local" id="metaData" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor em Destaque (Opcional, ex: R$ 5.000.000,00)</label>
+                    <input type="text" id="metaValor">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn-salvar">Salvar Meta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Registro do Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registrado com sucesso:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('Falha no registro do ServiceWorker:', error);
+                    });
+            });
+        }
+
+        // --- BASE DE DADOS (LOCAL STORAGE) ---
+        // Se não houver dados salvos, carrega as 3 metas originais
+        const dadosIniciais = [
+            { id: 1, titulo: "Meta 1: Preparação Novo Ciclo", data: "2027-03-12T00:00:00", valor: "" },
+            { id: 2, titulo: "Meta 2: Zeramento de Dívidas", data: "2028-12-31T00:00:00", valor: "" },
+            { id: 3, titulo: "Meta 3: Liberdade Financeira", data: "2032-12-31T00:00:00", valor: "R$ 5.000.000,00" }
+        ];
+
+        let metas = JSON.parse(localStorage.getItem('omni_metas')) || dadosIniciais;
+
+        // --- FUNÇÕES CRUD (Create, Read, Update, Delete) ---
+
+        // READ: Renderiza os cartões no HTML
+        function renderizarCartoes() {
+            const container = document.getElementById('grid-contadores');
+            container.innerHTML = '';
+
+            metas.forEach(meta => {
+                // Formata a data para visualização amigável
+                const dataObj = new Date(meta.data);
+                const dataFormatada = dataObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+                
+                // Trata o destaque financeiro vs espaço vazio
+                const destaqueHTML = meta.valor 
+                    ? `<span class="objetivo-destaque">${meta.valor}</span>`
+                    : `<div class="espacador-vazio"></div>`;
+
+                const cardHTML = `
+                    <div class="container-contador" id="card-${meta.id}">
+                        <div class="card-actions">
+                            <button class="btn-icon" onclick="editarMeta(${meta.id})" title="Editar">✏️</button>
+                            <button class="btn-icon" onclick="excluirMeta(${meta.id})" title="Excluir">🗑️</button>
+                        </div>
+                        <div>
+                            <h2>${meta.titulo}</h2>
+                            ${destaqueHTML}
+                            <div class="countdown">
+                                <div class="time-box"><span class="number time-y">00</span><span class="label">Anos</span></div>
+                                <div class="time-box"><span class="number time-m">00</span><span class="label">Meses</span></div>
+                                <div class="time-box"><span class="number time-d">00</span><span class="label">Dias</span></div>
+                                <div class="time-box"><span class="number time-h">00</span><span class="label">Horas</span></div>
+                                <div class="time-box"><span class="number time-min">00</span><span class="label">Min</span></div>
+                                <div class="time-box"><span class="number time-s">00</span><span class="label">Seg</span></div>
+                            </div>
+                        </div>
+                        <div>
+                            <hr class="divider">
+                            <div class="target-date">
+                                Alvo definido para: <strong>${dataFormatada}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHTML);
+            });
+
+            // Força a primeira atualização dos relógios imediatamente
+            atualizarRelogios();
+        }
+
+        // CREATE & UPDATE: Salvar formulário
+        function salvarMeta(e) {
+            e.preventDefault();
+            
+            const idInput = document.getElementById('metaId').value;
+            const titulo = document.getElementById('metaTitulo').value;
+            const data = document.getElementById('metaData').value;
+            const valor = document.getElementById('metaValor').value;
+
+            if (idInput) {
+                // UPDATE (Atualizar existente)
+                const index = metas.findIndex(m => m.id == idInput);
+                if(index !== -1) {
+                    metas[index] = { id: parseInt(idInput), titulo, data, valor };
+                }
+            } else {
+                // CREATE (Criar nova)
+                const novoId = metas.length > 0 ? Math.max(...metas.map(m => m.id)) + 1 : 1;
+                metas.push({ id: novoId, titulo, data, valor });
+            }
+
+            // Salva no navegador e recarrega
+            localStorage.setItem('omni_metas', JSON.stringify(metas));
+            fecharModal();
+            renderizarCartoes();
+        }
+
+        // UPDATE (Preparar form para edição)
+        function editarMeta(id) {
+            const meta = metas.find(m => m.id === id);
+            if (meta) {
+                document.getElementById('metaId').value = meta.id;
+                document.getElementById('metaTitulo').value = meta.titulo;
+                document.getElementById('metaData').value = meta.data;
+                document.getElementById('metaValor').value = meta.valor;
+                
+                document.getElementById('modalTitle').innerText = "Editar Meta";
+                document.getElementById('crudModal').style.display = 'flex';
+            }
+        }
+
+        // DELETE (Excluir)
+        function excluirMeta(id) {
+            if(confirm("Tem certeza que deseja excluir esta meta?")) {
+                metas = metas.filter(m => m.id !== id);
+                localStorage.setItem('omni_metas', JSON.stringify(metas));
+                renderizarCartoes();
+            }
+        }
+
+        // --- CONTROLES DE MODAL ---
+        function abrirModal() {
+            document.getElementById('metaForm').reset();
+            document.getElementById('metaId').value = '';
+            document.getElementById('modalTitle').innerText = "Nova Meta";
+            document.getElementById('crudModal').style.display = 'flex';
+        }
+
+        function fecharModal() {
+            document.getElementById('crudModal').style.display = 'none';
+        }
+
+        // --- LÓGICA DO CRONÔMETRO ---
+        function atualizarRelogios() {
+            const agora = new Date();
+
+            metas.forEach(meta => {
+                const card = document.getElementById(`card-${meta.id}`);
+                if (!card) return;
+
+                const target = new Date(meta.data);
+
+                if (target <= agora) {
+                    const countdownContainer = card.querySelector('.countdown');
+                    if(countdownContainer) {
+                        countdownContainer.innerHTML = "<div style='font-size: 1.5rem; color: #D1107A; font-weight: bold; width: 100%; grid-column: span 3; text-align: center; margin: 20px 0;'>Objetivo Concluído!</div>";
+                    }
+                    return;
+                }
+
+                let years = target.getFullYear() - agora.getFullYear();
+                let months = target.getMonth() - agora.getMonth();
+                let days = target.getDate() - agora.getDate();
+                let hours = target.getHours() - agora.getHours();
+                let minutes = target.getMinutes() - agora.getMinutes();
+                let seconds = target.getSeconds() - agora.getSeconds();
+
+                if (seconds < 0) { seconds += 60; minutes--; }
+                if (minutes < 0) { minutes += 60; hours--; }
+                if (hours < 0) { hours += 24; days--; }
+                if (days < 0) {
+                    let prevMonth = new Date(target.getFullYear(), target.getMonth(), 0);
+                    days += prevMonth.getDate();
+                    months--;
+                }
+                if (months < 0) { months += 12; years--; }
+
+                // Atualiza o DOM selecionando as classes dentro do card específico
+                const yEl = card.querySelector('.time-y'); if(yEl) yEl.innerText = String(years).padStart(2, '0');
+                const mEl = card.querySelector('.time-m'); if(mEl) mEl.innerText = String(months).padStart(2, '0');
+                const dEl = card.querySelector('.time-d'); if(dEl) dEl.innerText = String(days).padStart(2, '0');
+                const hEl = card.querySelector('.time-h'); if(hEl) hEl.innerText = String(hours).padStart(2, '0');
+                const minEl = card.querySelector('.time-min'); if(minEl) minEl.innerText = String(minutes).padStart(2, '0');
+                const sEl = card.querySelector('.time-s'); if(sEl) sEl.innerText = String(seconds).padStart(2, '0');
+            });
+        }
+
+        // --- INICIALIZAÇÃO ---
+        renderizarCartoes();
+        setInterval(atualizarRelogios, 1000);
+
+    </script>
+</body>
+</html>
